@@ -69,7 +69,7 @@ export const likeUnlikePost = async (req, res) => {
     const post = await Post.findById(postId);
 
     if (!post) {
-      return res.status(404).json({ message: "Post not found" });
+      return res.status(404).json({ error: "Post not found" });
     }
 
     const userLikedPost = post.likes.includes(userId);
@@ -86,7 +86,7 @@ export const likeUnlikePost = async (req, res) => {
     }
   } catch (error) {
     console.error("Error in likeUnlikePost controller", error.message);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -105,7 +105,7 @@ export const replyToPost = async (req, res) => {
     const post = await Post.findById(postId);
 
     if (!post) {
-      return res.status(404).json({ message: "Post not found" });
+      return res.status(404).json({ error: "Post not found" });
     }
 
     const reply = { userId, text, userProfilePic, username };
@@ -115,7 +115,7 @@ export const replyToPost = async (req, res) => {
     res.status(200).json({ message: "Reply added successfully", post });
   } catch (error) {
     console.error("Error in replyToPost controller", error.message);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -124,7 +124,7 @@ export const getFeedPost = async (req, res) => {
     const userId = req.user._id;
     const user = await User.findById(userId);
 
-    if (!user) return res.status(404).json({ message: "User not found" });
+    if (!user) return res.status(404).json({ error: "User not found" });
 
     const following = user.following;
 
@@ -135,6 +135,6 @@ export const getFeedPost = async (req, res) => {
     res.status(200).json({ feedPosts });
   } catch (error) {
     console.error("Error in getFeedPost controller", error.message);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ error: "Internal server error" });
   }
 };

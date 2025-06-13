@@ -1,19 +1,16 @@
 import User from "../models/userModel.js";
-import bcrypt, { hash } from "bcryptjs";
+import bcrypt from "bcryptjs";
 import generateTokenAndSetCookie from "../utils/helpers/generateTokenAndSetCookie.js";
+import { v2 as cloudinary } from "cloudinary";
 
 export const signupUser = async (req, res) => {
   try {
     const { name, email, username, password } = req.body;
-
     const user = await User.findOne({ $or: [{ email }, { username }] });
 
     if (user) {
-      return res
-        .status(400)
-        .json({ message: "User with that email or username already exists." });
+      return res.status(400).json({ error: "User already exists" });
     }
-
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
@@ -23,20 +20,25 @@ export const signupUser = async (req, res) => {
       username,
       password: hashedPassword,
     });
-
     await newUser.save();
 
-    generateTokenAndSetCookie(newUser._id, res);
+    if (newUser) {
+      generateTokenAndSetCookie(newUser._id, res);
 
-    res.status(201).json({
-      _id: newUser._id,
-      name: newUser.name,
-      email: newUser.email,
-      username: newUser.username,
-    });
-  } catch (error) {
-    console.error("Error in signupUser controller: ", error.message);
-    res.status(500).json({ message: "Internal Server Error" });
+      res.status(201).json({
+        _id: newUser._id,
+        name: newUser.name,
+        email: newUser.email,
+        username: newUser.username,
+        bio: newUser.bio,
+        profilePic: newUser.profilePic,
+      });
+    } else {
+      res.status(400).json({ error: "Invalid user data" });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+    console.log("Error in signupUser: ", err.message);
   }
 };
 
@@ -56,10 +58,12 @@ export const loginUser = async (req, res) => {
       name: user.name,
       email: user.email,
       username: user.username,
+      bio: user.bio,
+      profilePic: user.profilePic,
     });
   } catch (error) {
     console.error("Error in loginUser controller", error.message);
-    res.status(500).json({ message: "Internal Server Error" });
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
@@ -69,7 +73,7 @@ export const logoutUser = async (req, res) => {
     res.status(200).json({ message: "User logged out successully" });
   } catch (error) {
     console.error("Error in logoutUser controller", error.message);
-    res.status(500).json({ message: "Internal Server Error" });
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
@@ -83,7 +87,7 @@ export const followUnfollowUser = async (req, res) => {
       return res.status(400).json({ message: "You cannot follow/unfollow yourself" });
 
     if (!userToModify || !currentUser)
-      return res.status(404).json({ message: "User to follow/unfollow not found." });
+      return res.status(404).json({ error: "User to follow/unfollow not found." });
 
     const isFollowing = currentUser.following.includes(id);
 
@@ -100,16 +104,18 @@ export const followUnfollowUser = async (req, res) => {
     }
   } catch (error) {
     console.error("Error in followUnfollowUser controller", error.message);
-    res.status(500).json({ message: "Internal Server Error" });
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
 export const updateUser = async (req, res) => {
-  const { name, email, username, password, profilePic, bio } = req.body;
+  const { name, email, username, password, bio } = req.body;
+  let { profilePic } = req.body;
+
   const userId = req.user._id;
   try {
     let user = await User.findById(userId);
-    if (!user) return res.status(404).json({ message: "User not found" });
+    if (!user) return res.status(404).json({ error: "User not found" });
 
     if (req.params.id !== userId.toString())
       return res.status(400).json({ message: "You cannot update other users's profile" });
@@ -120,6 +126,15 @@ export const updateUser = async (req, res) => {
       user.password = hashedPassword;
     }
 
+    if (profilePic) {
+      if (user.profilePic) {
+        await cloudinary.uploader.destroy(user.profilePic.split("/").pop().split(".")[0]);
+      }
+      
+      const uploadedResponse = await cloudinary.uploader.upload(profilePic);
+      profilePic = uploadedResponse.secure_url;
+    }
+
     user.name = name || user.name;
     user.email = email || user.email;
     user.username = username || user.username;
@@ -128,10 +143,10 @@ export const updateUser = async (req, res) => {
 
     user = await user.save();
 
-    res.status(200).json({ message: "Profile updated successfully", user });
+    res.status(200).json({ user });
   } catch (error) {
     console.error("Error in updateUser controller", error.message);
-    res.status(500).json({ message: "Internal Server Error" });
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
@@ -141,11 +156,11 @@ export const getUserProfile = async (req, res) => {
     const user = await User.findOne({ username })
       .select("-password")
       .select("-updatedAt");
-    if (!user) return res.status(404).json({ message: "User not found" });
+    if (!user) return res.status(404).json({ error: "User not found" });
 
     res.status(200).json(user);
   } catch (error) {
     console.error("Error in getUserProfile controller", error.message);
-    res.status(500).json({ message: "Internal Server Error" });
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };
