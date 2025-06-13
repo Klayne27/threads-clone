@@ -1,21 +1,28 @@
 import Post from "../models/postModel.js";
 import User from "../models/userModel.js";
+import { v2 as cloudinary } from "cloudinary";
 
 export const createPost = async (req, res) => {
   try {
-    const { text, img } = req.body;
+    const { text } = req.body;
+    let {img} = req.body;
 
     const postedBy = req.user._id;
 
     if (!text) {
-      return res.status(400).json({ message: "Text field is required" });
+      return res.status(400).json({ error: "Text field is required" });
     }
 
     const maxLength = 500;
     if (text.length > maxLength) {
       return res
         .status(400)
-        .json({ message: `Text mus be less than ${maxLength} characters` });
+        .json({ error: `Text mus be less than ${maxLength} characters` });
+    }
+
+    if (img) {
+      const uploadedResponse = await cloudinary.uploader.upload(img);
+      img = uploadedResponse.secure_url;
     }
 
     const newPost = new Post({ postedBy, text, img });
@@ -23,7 +30,7 @@ export const createPost = async (req, res) => {
     res.status(201).json({ message: "Post created successfully", newPost });
   } catch (error) {
     console.error("Error in createPost controller", error.message);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -32,13 +39,13 @@ export const getPost = async (req, res) => {
     const post = await Post.findById(req.params.id);
 
     if (!post) {
-      return res.status(404).json({ message: "Post not found" });
+      return res.status(404).json({ error: "Post not found" });
     }
 
     res.status(200).json(post);
   } catch (error) {
     console.error("Error in getPost controller", error.message);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -46,18 +53,18 @@ export const deletePost = async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
     if (!post) {
-      return res.status(404).json({ message: "Post not found" });
+      return res.status(404).json({ error: "Post not found" });
     }
 
     if (post.postedBy.toString() !== req.user._id.toString()) {
-      return res.status(401).json({ message: "Unauthorized to delete post" });
+      return res.status(401).json({ error: "Unauthorized to delete post" });
     }
 
     await Post.findByIdAndDelete(req.params.id);
     res.status(201).json({ message: "Post deleted successfully" });
   } catch (error) {
     console.error("Error in deletePost controller", error.message);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 

@@ -36,9 +36,9 @@ export const signupUser = async (req, res) => {
     } else {
       res.status(400).json({ error: "Invalid user data" });
     }
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-    console.log("Error in signupUser: ", err.message);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+    console.log("Error in signupUser: ", error.message);
   }
 };
 
@@ -49,7 +49,7 @@ export const loginUser = async (req, res) => {
     const isPasswordCorrect = await bcrypt.compare(password, user.password || "");
 
     if (!user || !isPasswordCorrect)
-      return res.status(400).json({ message: "Invalid credentials" });
+      return res.status(400).json({ error: "Invalid credentials" });
 
     generateTokenAndSetCookie(user._id, res);
 
@@ -84,7 +84,7 @@ export const followUnfollowUser = async (req, res) => {
     const currentUser = await User.findById(req.user._id);
 
     if (id === req.user._id.toString())
-      return res.status(400).json({ message: "You cannot follow/unfollow yourself" });
+      return res.status(400).json({ error: "You cannot follow/unfollow yourself" });
 
     if (!userToModify || !currentUser)
       return res.status(404).json({ error: "User to follow/unfollow not found." });
@@ -118,7 +118,7 @@ export const updateUser = async (req, res) => {
     if (!user) return res.status(404).json({ error: "User not found" });
 
     if (req.params.id !== userId.toString())
-      return res.status(400).json({ message: "You cannot update other users's profile" });
+      return res.status(400).json({ error: "You cannot update other users's profile" });
 
     if (password) {
       const salt = await bcrypt.genSalt(10);
