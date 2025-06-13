@@ -35,8 +35,8 @@ export const signupUser = async (req, res) => {
       username: newUser.username,
     });
   } catch (error) {
-    res.status(500).json({ message: "Internal Server Error" });
     console.error("Error in signupUser controller: ", error.message);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
@@ -58,8 +58,8 @@ export const loginUser = async (req, res) => {
       username: user.username,
     });
   } catch (error) {
-    res.status(500).json({ message: "Internal Server Error" });
     console.error("Error in loginUser controller", error.message);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
@@ -68,8 +68,8 @@ export const logoutUser = async (req, res) => {
     res.cookie("threads_jwt", "", { maxAge: 1 });
     res.status(200).json({ message: "User logged out successully" });
   } catch (error) {
-    res.status(500).json({ message: "Internal Server Error" });
     console.error("Error in logoutUser controller", error.message);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
@@ -99,8 +99,8 @@ export const followUnfollowUser = async (req, res) => {
       res.status(200).json({ message: "User followed successfully" });
     }
   } catch (error) {
-    res.status(500).json({ message: "Internal Server Error" });
     console.error("Error in followUnfollowUser controller", error.message);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
@@ -130,8 +130,8 @@ export const updateUser = async (req, res) => {
 
     res.status(200).json({ message: "Profile updated successfully", user });
   } catch (error) {
-    res.status(500).json({ message: "Internal Server Error" });
     console.error("Error in updateUser controller", error.message);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
@@ -145,7 +145,7 @@ export const getUserProfile = async (req, res) => {
 
     res.status(200).json(user);
   } catch (error) {
-    res.status(500).json({ message: "Internal Server Error" });
     console.error("Error in getUserProfile controller", error.message);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };
