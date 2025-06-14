@@ -5,7 +5,7 @@ import { v2 as cloudinary } from "cloudinary";
 export const createPost = async (req, res) => {
   try {
     const { text } = req.body;
-    let {img} = req.body;
+    let { img } = req.body;
 
     const postedBy = req.user._id;
 
@@ -17,7 +17,7 @@ export const createPost = async (req, res) => {
     if (text.length > maxLength) {
       return res
         .status(400)
-        .json({ error: `Text mus be less than ${maxLength} characters` });
+        .json({ error: `Text must be less than ${maxLength} characters` });
     }
 
     if (img) {
@@ -139,7 +139,7 @@ export const getFeedPost = async (req, res) => {
       createdAt: -1,
     });
 
-    res.status(200).json({ feedPosts });
+    res.status(200).json(feedPosts);
   } catch (error) {
     console.error("Error in getFeedPost controller", error.message);
     res.status(500).json({ error: "Internal server error" });
