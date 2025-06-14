@@ -10,12 +10,12 @@ import {
   Avatar,
   Center,
 } from "@chakra-ui/react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRecoilState } from "recoil";
 import userAtom from "../atoms/userAtom";
-import { useRef } from "react";
 import usePreviewImg from "../hooks/usePreviewImg";
 import useShowToast from "../hooks/useShowToast";
+
 export default function UpdateProfilePage() {
   const [user, setUser] = useRecoilState(userAtom);
   const [inputs, setInputs] = useState({
@@ -25,8 +25,8 @@ export default function UpdateProfilePage() {
     bio: user.bio,
     password: "",
   });
-  const [updating, setUpdating] = useState(false);
   const fileRef = useRef(null);
+  const [updating, setUpdating] = useState(false);
 
   const showToast = useShowToast();
 
@@ -44,7 +44,6 @@ export default function UpdateProfilePage() {
         },
         body: JSON.stringify({ ...inputs, profilePic: imgUrl }),
       });
-
       const data = await res.json(); // updated user object
       if (data.error) {
         showToast("Error", data.error, "error");
@@ -59,7 +58,6 @@ export default function UpdateProfilePage() {
       setUpdating(false);
     }
   };
-
   return (
     <form onSubmit={handleSubmit}>
       <Flex align={"center"} justify={"center"} my={6}>
@@ -99,7 +97,7 @@ export default function UpdateProfilePage() {
             />
           </FormControl>
           <FormControl>
-            <FormLabel>Username</FormLabel>
+            <FormLabel>User name</FormLabel>
             <Input
               placeholder="johndoe"
               value={inputs.username}

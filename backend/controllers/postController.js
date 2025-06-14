@@ -4,13 +4,20 @@ import { v2 as cloudinary } from "cloudinary";
 
 export const createPost = async (req, res) => {
   try {
-    const { text } = req.body;
+    const { postedBy, text } = req.body;
     let { img } = req.body;
 
-    const postedBy = req.user._id;
+    if (!postedBy || !text) {
+      return res.status(400).json({ error: "Postedby and text fields are required" });
+    }
 
-    if (!text) {
-      return res.status(400).json({ error: "Text field is required" });
+    const user = await User.findById(postedBy);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    if (user._id.toString() !== req.user._id.toString()) {
+      return res.status(401).json({ error: "Unauthorized to create post" });
     }
 
     const maxLength = 500;
@@ -27,10 +34,11 @@ export const createPost = async (req, res) => {
 
     const newPost = new Post({ postedBy, text, img });
     await newPost.save();
-    res.status(201).json({ message: "Post created successfully", newPost });
-  } catch (error) {
-    console.error("Error in createPost controller", error.message);
-    res.status(500).json({ error: "Internal server error" });
+
+    res.status(201).json(newPost);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+    console.log(err);
   }
 };
 
@@ -120,11 +128,18 @@ export const replyToPost = async (req, res) => {
       return res.status(404).json({ error: "Post not found" });
     }
 
-    const reply = { userId, text, userProfilePic, username };
+    const reply = {
+      userId,
+      text,
+      userProfilePic,
+      username,
+      createdAt: new Date(),
+    };
 
     post.replies.push(reply);
     await post.save();
-    res.status(200).json({ message: "Reply added successfully", post });
+    const latestReply = post.replies[post.replies.length - 1]; // Get the reply that was just added
+    res.status(200).json(latestReply);
   } catch (error) {
     console.error("Error in replyToPost controller", error.message);
     res.status(500).json({ error: "Internal server error" });
@@ -158,7 +173,7 @@ export const getUserPosts = async (req, res) => {
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
-    const posts = await Post.find({ postedBy: user._id }).sort({ createdBy: -1 });
+    const posts = await Post.find({ postedBy: user._id }).sort({ createdAt: -1 });
 
     res.status(200).json(posts);
   } catch (error) {

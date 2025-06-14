@@ -36,6 +36,11 @@ const postSchema = new mongoose.Schema(
         username: {
           type: String,
         },
+        createdAt: {
+          // <--- Manually add this field
+          type: Date,
+          default: Date.now, // <--- Set default to the current date/time
+        },
       },
     ],
   },
@@ -46,4 +51,4 @@ const postSchema = new mongoose.Schema(
 
 const Post = mongoose.model("Post", postSchema);
 
-export default Post
+export default Post;

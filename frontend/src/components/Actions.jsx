@@ -16,20 +16,20 @@ import {
 } from "@chakra-ui/react";
 import { useState } from "react";
 import useShowToast from "../hooks/useShowToast";
-import { useRecoilValue } from "recoil";
+import { useRecoilState, useRecoilValue } from "recoil";
 import userAtom from "../atoms/userAtom";
+import postsAtom from "../atoms/postsAtom";
 
-const Actions = ({ post: post_ }) => {
+const Actions = ({ post }) => {
   const user = useRecoilValue(userAtom);
-  const [liked, setLiked] = useState(post_?.likes?.includes(user?._id));
-  const [post, setPost] = useState(post_);
+  const [liked, setLiked] = useState(post?.likes?.includes(user?._id));
+  const [posts, setPosts] = useRecoilState(postsAtom);
   const [isLiking, setIsLiking] = useState(false);
   const [isReplying, setIsReplying] = useState(false);
   const [reply, setReply] = useState("");
   const showToast = useShowToast();
 
   const { isOpen, onOpen, onClose } = useDisclosure();
-
 
   const handleLikeUnlike = async () => {
     if (!user) return showToast("Error", "You must be logged in to like a post", "error");
@@ -49,9 +49,21 @@ const Actions = ({ post: post_ }) => {
 
       if (!liked) {
         // add the id of the current user to post.likes array
-        setPost({ ...post, likes: [...post.likes, user._id] });
+        const updatedPosts = posts.map((p) => {
+          if (p._id === post._id) {
+            return { ...p, likes: [...p.likes, user._id] };
+          }
+          return p;
+        });
+        setPosts(updatedPosts);
       } else {
-        setPost({ ...post, likes: post.likes.filter((id) => id !== user._id) });
+        const updatedPosts = posts.map((p) => {
+          if (p._id === post._id) {
+            return { ...p, likes: p.likes.filter((id) => id !== user._id) };
+          }
+          return p;
+        });
+        setPosts(updatedPosts);
       }
       setLiked(!liked);
     } catch (error) {
@@ -62,30 +74,40 @@ const Actions = ({ post: post_ }) => {
   };
 
   const handleReply = async () => {
-    if(!user) return showToast("Error", "You must be logged in the reply to a post", 'error')
-      if(isReplying) return
-    setIsReplying(true)
+    if (!user)
+      return showToast("Error", "You must be logged in to reply to a post", "error");
+    if (isReplying) return;
+    setIsReplying(true);
     try {
-      const res = await fetch(`/api/posts/reply/${post._id}`, {
+      const res = await fetch("/api/posts/reply/" + post._id, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({ text: reply }),
       });
-
       const data = await res.json();
       if (data.error) return showToast("Error", data.error, "error");
+
+      const updatedPosts = posts.map((p) => {
+        if (p._id === post._id) {
+          return { ...p, replies: [...p.replies, data] };
+        }
+        return p;
+      });
+      setPosts(updatedPosts);
       showToast("Success", "Reply posted successfully", "success");
-      onClose()
+      onClose();
       setReply("");
     } catch (error) {
       showToast("Error", error.message, "error");
     } finally {
       setIsReplying(false);
     }
-  }
+  };
 
   return (
-    <Flex flexDirection="column">
+    <Flex flexDirection="column" cursor={"pointer"}>
       <Flex gap={3} my={2} onClick={(e) => e.preventDefault()}>
         <svg
           aria-label="Like"
@@ -129,11 +151,11 @@ const Actions = ({ post: post_ }) => {
       </Flex>
       <Flex gap={2} alignItems={"center"}>
         <Text color={"gray.light"} fontSize="sm">
-          {post?.replies.length} replies
+          {post?.replies?.length} replies
         </Text>
         <Box w={0.5} h={0.5} borderRadius={"full"} bg={"gray.light"}></Box>
         <Text color={"gray.light"} fontSize="sm">
-          {post?.likes.length} likes
+          {post?.likes?.length} likes
         </Text>
       </Flex>
 

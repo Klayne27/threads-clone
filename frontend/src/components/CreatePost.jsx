@@ -18,27 +18,28 @@ import {
   useColorModeValue,
   useDisclosure,
 } from "@chakra-ui/react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import usePreviewImg from "../hooks/usePreviewImg";
-import { useRef } from "react";
 import { BsFillImageFill } from "react-icons/bs";
-import { useRecoilValue } from "recoil";
+import { useRecoilState, useRecoilValue } from "recoil";
 import userAtom from "../atoms/userAtom";
 import useShowToast from "../hooks/useShowToast";
+import postsAtom from "../atoms/postsAtom";
+import { useParams } from "react-router-dom";
 
 const MAX_CHAR = 500;
 
-function CreatePost() {
-  const user = useRecoilValue(userAtom);
+const CreatePost = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [postText, setPostText] = useState("");
+  const { handleImageChange, imgUrl, setImgUrl } = usePreviewImg();
   const imageRef = useRef(null);
-  const [remainingCharacters, setRemainingCharacters] = useState(MAX_CHAR);
+  const [remainingChar, setRemainingChar] = useState(MAX_CHAR);
+  const user = useRecoilValue(userAtom);
   const showToast = useShowToast();
   const [loading, setLoading] = useState(false);
-
-
-  const { handleImageChange, imgUrl, setImgUrl } = usePreviewImg();
+  const [posts, setPosts] = useRecoilState(postsAtom);
+  const { username } = useParams();
 
   const handleTextChange = (e) => {
     const inputText = e.target.value;
@@ -46,10 +47,10 @@ function CreatePost() {
     if (inputText.length > MAX_CHAR) {
       const truncatedText = inputText.slice(0, MAX_CHAR);
       setPostText(truncatedText);
-      setRemainingCharacters(0);
+      setRemainingChar(0);
     } else {
       setPostText(inputText);
-      setRemainingCharacters(MAX_CHAR - inputText.length);
+      setRemainingChar(MAX_CHAR - inputText.length);
     }
   };
 
@@ -61,7 +62,7 @@ function CreatePost() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({text: postText, img: imgUrl }),
+        body: JSON.stringify({ postedBy: user._id, text: postText, img: imgUrl }),
       });
 
       const data = await res.json();
@@ -70,6 +71,10 @@ function CreatePost() {
         return;
       }
       showToast("Success", "Post created successfully", "success");
+      if (username === user.username) {
+        setPosts([data, ...posts]);
+      }
+
       onClose();
       setPostText("");
       setImgUrl("");
@@ -85,24 +90,26 @@ function CreatePost() {
       <Button
         position={"fixed"}
         bottom={10}
-        right={10}
-        leftIcon={<AddIcon />}
+        right={5}
         bg={useColorModeValue("gray.300", "gray.dark")}
         onClick={onOpen}
+        size={{ base: "sm", sm: "md" }}
       >
-        Post
+        <AddIcon />
       </Button>
+
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
+
         <ModalContent>
-          <ModalHeader>Creat Post</ModalHeader>
+          <ModalHeader>Create Post</ModalHeader>
           <ModalCloseButton />
           <ModalBody pb={6}>
             <FormControl>
               <Textarea
-                placeholder="Post content goes here"
-                value={postText}
+                placeholder="Post content goes here.."
                 onChange={handleTextChange}
+                value={postText}
               />
               <Text
                 fontSize="xs"
@@ -111,8 +118,9 @@ function CreatePost() {
                 m={"1"}
                 color={"gray.800"}
               >
-                {remainingCharacters}/500
+                {remainingChar}/{MAX_CHAR}
               </Text>
+
               <Input type="file" hidden ref={imageRef} onChange={handleImageChange} />
 
               <BsFillImageFill
@@ -126,7 +134,9 @@ function CreatePost() {
               <Flex mt={5} w={"full"} position={"relative"}>
                 <Image src={imgUrl} alt="Selected img" />
                 <CloseButton
-                  onClick={() => setImgUrl("")}
+                  onClick={() => {
+                    setImgUrl("");
+                  }}
                   bg={"gray.800"}
                   position={"absolute"}
                   top={2}
@@ -137,7 +147,12 @@ function CreatePost() {
           </ModalBody>
 
           <ModalFooter>
-            <Button colorScheme="blue" mr={3} onClick={handleCreatePost} isLoading={loading}>
+            <Button
+              colorScheme="blue"
+              mr={3}
+              onClick={handleCreatePost}
+              isLoading={loading}
+            >
               Post
             </Button>
           </ModalFooter>
@@ -145,6 +160,6 @@ function CreatePost() {
       </Modal>
     </>
   );
-}
+};
 
 export default CreatePost;

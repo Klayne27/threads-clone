@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import generateTokenAndSetCookie from "../utils/helpers/generateTokenAndSetCookie.js";
 import { v2 as cloudinary } from "cloudinary";
 import mongoose from "mongoose";
+import Post from "../models/postModel.js";
 
 export const signupUser = async (req, res) => {
   try {
@@ -144,7 +145,22 @@ export const updateUser = async (req, res) => {
 
     user = await user.save();
 
-    res.status(200).json({ user });
+    // Find all posts that this user replied and update username and userProfilePic fields
+    await Post.updateMany(
+      { "replies.userId": userId },
+      {
+        $set: {
+          "replies.$[reply].username": user.username,
+          "replies.$[reply].userProfilePic": user.profilePic,
+        },
+      },
+      { arrayFilters: [{ "reply.userId": userId }] }
+    );
+
+    // password should be null in response
+    user.password = null;
+
+    res.status(200).json(user);
   } catch (error) {
     console.error("Error in updateUser controller", error.message);
     res.status(500).json({ error: "Internal Server Error" });
