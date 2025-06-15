@@ -77,10 +77,7 @@ const PostPage = () => {
 
   
   if (!currentPost) return null;
-  console.log("currentPost", currentPost);
   const sortedReplies = [...currentPost.replies].sort((a, b) => {
-    // Sort by createdAt in descending order (newest first)
-    // Make sure createdAt exists on your reply objects (via Mongoose timestamps)
     return new Date(b.createdAt) - new Date(a.createdAt);
   });
 
