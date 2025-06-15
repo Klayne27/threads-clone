@@ -12,7 +12,7 @@ export const SocketContextProvider = ({ children }) => {
 
 
   useEffect(() => {
-    const socket = io("/", {
+    const socket = io("http://localhost:5000", {
       query: {
         userId: user?._id,
       },
