@@ -62,7 +62,6 @@ function ChatPage() {
           return;
         }
 
-        console.log(data);
         setConversations(data);
       } catch (error) {
         showToast("Error", error.message, "error");
